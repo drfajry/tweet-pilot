@@ -237,6 +237,13 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #1d9bf044; border-radius: 4px; }
 
+  .src-btn {
+    padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+    border:1px solid var(--border);color:var(--muted);cursor:pointer;
+    background:transparent;font-family:var(--font);transition:all .2s;
+  }
+  .src-btn.active { background:var(--blue);border-color:var(--blue);color:#fff; }
+
   @media(max-width:600px) {
     .steps { display: none; }
     .trend-grid, .grid2, .tone-grid { grid-template-columns: 1fr; }
@@ -425,6 +432,16 @@ function renderStep2() {
   <div class="page-title">إنشاء التغريدة</div>
   <p class="page-sub" style="margin-bottom:20px">أدخل رابط الأفلييت ثم دع الذكاء الاصطناعي يكتب</p>
   <div class="card">
+    <div style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:13px;color:#9aa;font-weight:500">🏆 أفضل المنتجات:</span>
+        <button class="src-btn active" data-src="noon" onclick="setBsSource('noon',this)">🛍️ نون</button>
+        <button class="src-btn" data-src="amazon" onclick="setBsSource('amazon',this)">📦 أمازون</button>
+        <button class="src-btn" data-src="aliexpress" onclick="setBsSource('aliexpress',this)">🌐 علي إكسبريس</button>
+        <button class="btn btn-ghost" id="btnBestsellers" style="width:auto;padding:7px 14px;font-size:12px">جلب المنتجات</button>
+      </div>
+      <div id="bestsellersGrid" style="display:none;margin-bottom:14px"></div>
+    </div>
     <div class="grid2">
       <div class="field">
         <label>رابط الأفلييت *</label>
@@ -573,6 +590,7 @@ function bindStep() {
       updateCharCount(e.target.value.length);
     });
     $('btnGenerate')?.addEventListener('click', generateTweet);
+    $('btnBestsellers')?.addEventListener('click', fetchBestsellers);
     $('btnNext2')?.addEventListener('click', () => goStep(3));
   }
   if (S.step === 3) {
@@ -658,6 +676,48 @@ const TONE_MAP = {
   funny:       'فكاهي وخفيف الظل مع لمسة ذكاء',
   urgency:     'عاجل وإلحاحي يحث على اتخاذ قرار سريع',
 };
+
+let bsSource = 'noon';
+function setBsSource(src, el) {
+  bsSource = src;
+  document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function fetchBestsellers() {
+  const btn = document.getElementById('btnBestsellers');
+  const grid = document.getElementById('bestsellersGrid');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الجلب...';
+  try {
+    const data = await API.get('/api/bestsellers?source=' + bsSource);
+    if (data.success && data.products.length) {
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = '1fr 1fr';
+      grid.style.gap = '8px';
+      grid.innerHTML = data.products.map(p => `
+        <div onclick="selectProduct('${p.name.replace(/'/g,"\'")}','${p.url}')"
+          style="padding:10px 12px;background:#0a0f1a;border:2px solid #1a2540;border-radius:10px;cursor:pointer;transition:all .2s"
+          onmouseover="this.style.borderColor='#1d9bf0'" onmouseout="this.style.borderColor='#1a2540'">
+          <div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:3px">${p.name}</div>
+          <div style="font-size:11px;color:#6b7280">${p.brand} • ${p.price} ${p.currency}</div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {}
+  btn.disabled = false;
+  btn.textContent = '🏆 جلب أفضل المنتجات من نون';
+}
+
+function selectProduct(name, url) {
+  document.getElementById('afUrl').value = url;
+  document.getElementById('prodDesc').value = name;
+  S.affiliateUrl = url;
+  S.productDesc = name;
+  // highlight selected
+  document.querySelectorAll('#bestsellersGrid > div').forEach(d => d.style.borderColor = '#1a2540');
+  event.currentTarget.style.borderColor = '#1d9bf0';
+}
 
 async function generateTweet() {
   const afUrl = document.getElementById('afUrl')?.value?.trim();
