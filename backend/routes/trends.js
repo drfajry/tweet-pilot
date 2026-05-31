@@ -1,32 +1,30 @@
 const router = require('express').Router();
-const { getBearerClient } = require('../services/twitter');
+const googleTrends = require('google-trends-api');
 
 const REGIONS = {
-  sa: { woeid: 23424938, label: 'السعودية' },
-  world: { woeid: 1, label: 'العالم' },
-  ae: { woeid: 23424738, label: 'الإمارات' },
-  eg: { woeid: 23424802, label: 'مصر' },
+  sa: 'SA',
+  world: '',
+  ae: 'AE',
+  eg: 'EG',
 };
 
-// GET /api/trends?region=sa
 router.get('/', async (req, res) => {
+  const regionKey = req.query.region || 'sa';
+  const geo = REGIONS[regionKey] || 'SA';
+
   try {
-    const regionKey = req.query.region || 'sa';
-    const region = REGIONS[regionKey] || REGIONS.sa;
+    const result = await googleTrends.dailyTrends({ geo, hl: 'ar' });
+    const data = JSON.parse(result);
+    const items = data?.default?.trendingSearchesDays?.[0]?.trendingSearches || [];
 
-    const client = getBearerClient();
+    const trends = items.slice(0, 12).map(t => ({
+      name: '#' + t.title.query.replace(/\s+/g, '_'),
+      tweet_volume: parseInt(t.formattedTraffic?.replace(/[^0-9]/g, '') || '0') * 1000,
+    }));
 
-    // X API v1.1 trends (still available)
-    const trends = await client.v1.trendsByPlace(region.woeid);
-    const list = trends[0]?.trends?.slice(0, 15).map(t => ({
-      name: t.name,
-      url: t.url,
-      tweet_volume: t.tweet_volume,
-    })) || [];
-
-    res.json({ success: true, region: region.label, trends: list });
+    res.json({ success: true, region: regionKey, trends });
   } catch (err) {
-    console.error('Trends error:', err.message);
+    console.error('Google Trends error:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
