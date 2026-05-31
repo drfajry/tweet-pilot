@@ -689,19 +689,14 @@ async function generateTweet() {
 - لا تكتب أي شرح أو مقدمة، فقط نص التغريدة مباشرة`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+    const data = await API.post('/api/generate', {
+      trends: S.selectedTrends,
+      affiliateUrl: S.affiliateUrl,
+      productDesc: S.productDesc,
+      tone: S.tone,
     });
-    const data = await response.json();
-    const text = data.content?.map(i => i.text || '').join('').trim();
-    if (text) {
-      S.generatedTweet = text;
+    if (data.success) {
+      S.generatedTweet = data.tweet;
     } else {
       alert('فشل التوليد، حاول مجدداً');
     }
