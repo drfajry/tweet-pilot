@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tweet Pilot — التغريد الذكي</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #070b14;
+    --bg2: #0d1421;
+    --bg3: #111827;
+    --border: #1a2540;
+    --border2: #1d9bf033;
+    --blue: #1d9bf0;
+    --blue2: #0d6efd;
+    --purple: #7c3aed;
+    --green: #00c896;
+    --red: #ff4444;
+    --orange: #ff8800;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --font: 'IBM Plex Sans Arabic', sans-serif;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0d1421 0%, #111827 60%, #0f2040 100%);
+    border-bottom: 1px solid var(--border2);
+    padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--blue), #0a4a8a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900; color: #fff;
+    box-shadow: 0 0 18px #1d9bf044;
+  }
+  .logo-text { font-size: 19px; font-weight: 700; color: #fff; }
+  .logo-sub { font-size: 11px; color: var(--blue); font-weight: 500; margin-top: 1px; }
+
+  /* ── Steps ── */
+  .steps { display: flex; gap: 6px; }
+  .step-pill {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border); color: var(--muted);
+    cursor: default; transition: all .25s; user-select: none;
+  }
+  .step-pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .step-pill.done { border-color: #1d9bf055; color: var(--blue); cursor: pointer; }
+  .step-pill.done:hover { background: #1d9bf011; }
+  .step-num {
+    width: 18px; height: 18px; border-radius: 50%; font-size: 10px;
+    display: flex; align-items: center; justify-content: center; font-weight: 700;
+    background: #222; color: var(--muted); flex-shrink: 0;
+  }
+  .step-pill.active .step-num { background: #fff; color: var(--blue); }
+  .step-pill.done .step-num { background: var(--blue); color: #fff; }
+
+  /* ── Layout ── */
+  .main { max-width: 840px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px;
+    margin-bottom: 18px; animation: fadeUp .3s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 7px; }
+
+  /* ── Page title ── */
+  .page-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+  /* ── Info box ── */
+  .info-box {
+    display: flex; gap: 10px; padding: 13px 16px;
+    background: #0d1b2a; border: 1px solid #1d4a7a55;
+    border-radius: 10px; margin-bottom: 20px;
+    font-size: 13px; color: #7ab8f5; line-height: 1.7;
+  }
+
+  /* ── Inputs ── */
+  label { display: block; font-size: 13px; color: #9aa; margin-bottom: 6px; font-weight: 500; }
+  input, textarea {
+    width: 100%; padding: 11px 14px;
+    background: #0a0f1a; border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 13px;
+    outline: none; transition: border .2s; font-family: var(--font);
+  }
+  input:focus, textarea:focus { border-color: var(--blue); }
+  input[type=password] { font-family: monospace; }
+  input[type=datetime-local] { color-scheme: dark; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { margin-bottom: 16px; }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%; padding: 13px; border: none; border-radius: 12px;
+    color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: var(--font); transition: all .2s;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--blue), var(--blue2)); box-shadow: 0 4px 18px #1d9bf033; }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 24px #1d9bf055; }
+  .btn-purple { background: linear-gradient(135deg, var(--purple), var(--blue)); box-shadow: 0 4px 18px #7c3aed33; }
+  .btn-purple:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn-ghost { background: #111827; border: 1px solid var(--border); color: var(--muted); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+  /* ── Region tabs ── */
+  .region-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .rtab {
+    padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; transition: all .2s; background: transparent; font-family: var(--font);
+  }
+  .rtab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  /* ── Trend grid ── */
+  .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .trend-card {
+    padding: 14px 16px; border-radius: 12px; cursor: pointer;
+    background: var(--bg2); border: 2px solid var(--border);
+    transition: all .2s; user-select: none;
+  }
+  .trend-card:hover { border-color: #1d9bf044; }
+  .trend-card.selected { background: #0c2d4a; border-color: var(--blue); transform: scale(1.02); }
+  .trend-name { font-size: 14px; font-weight: 700; color: #ccd; }
+  .trend-card.selected .trend-name { color: var(--blue); }
+  .trend-vol { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .check-badge {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* ── Selected tags ── */
+  .tag {
+    display: inline-block; padding: 3px 10px; margin: 2px 3px;
+    background: #1d9bf022; border: 1px solid #1d9bf044;
+    border-radius: 12px; font-size: 12px; color: #7ab8f5;
+  }
+
+  /* ── Tone buttons ── */
+  .tone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tone-btn {
+    padding: 10px 12px; border-radius: 10px; font-size: 13px;
+    background: var(--bg2); border: 2px solid var(--border);
+    color: var(--muted); cursor: pointer; transition: all .2s;
+    font-family: var(--font); text-align: center;
+  }
+  .tone-btn.active { background: #1d9bf011; border-color: var(--blue); color: var(--blue); font-weight: 600; }
+
+  /* ── Tweet editor ── */
+  .tweet-editor {
+    background: #0a0f1a; border: 1px solid var(--border2);
+    border-radius: 12px; padding: 14px; margin-bottom: 14px;
+  }
+  .tweet-editor.error { border-color: var(--red); }
+  .tweet-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .tweet-label { font-size: 13px; color: var(--blue); font-weight: 600; }
+  .char-count { font-size: 12px; font-weight: 700; }
+  #tweetText {
+    background: transparent; border: none; padding: 0;
+    font-size: 15px; line-height: 1.8; color: var(--text);
+    resize: vertical; min-height: 120px;
+  }
+  #tweetText:focus { border: none; box-shadow: none; }
+
+  /* ── Loading bar ── */
+  .loading-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 10px; }
+  .loading-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--blue)); animation: slide 1.4s infinite; width: 35%; }
+  @keyframes slide { 0%{transform:translateX(-200%)} 100%{transform:translateX(500%)} }
+
+  /* ── Tweet preview ── */
+  .tweet-preview {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; margin-bottom: 18px;
+  }
+  .tweet-preview-text { font-size: 15px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+  .tweet-preview-meta { display: flex; gap: 20px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+
+  /* ── Mode toggle ── */
+  .mode-toggle { display: flex; gap: 10px; margin-bottom: 16px; }
+  .mode-btn {
+    flex: 1; padding: 12px; border-radius: 10px; font-size: 14px;
+    background: var(--bg2); border: 2px solid var(--border);
+    color: var(--muted); cursor: pointer; font-family: var(--font);
+    transition: all .2s;
+  }
+  .mode-btn.active { background: #1d9bf011; border-color: var(--blue); color: var(--blue); font-weight: 600; }
+
+  /* ── History table ── */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .history-table th { padding: 10px 12px; text-align: right; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+  .history-table td { padding: 10px 12px; border-bottom: 1px solid #111827; color: #ccd; vertical-align: top; }
+  .badge { padding: 3px 9px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #00c89622; color: var(--green); }
+  .badge-red   { background: #ff444422; color: var(--red); }
+  .badge-blue  { background: #1d9bf022; color: var(--blue); }
+
+  /* ── Success screen ── */
+  .success-screen { text-align: center; padding: 48px 24px; }
+  .success-icon { font-size: 64px; margin-bottom: 18px; animation: pop .4s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop { from{transform:scale(0)} to{transform:scale(1)} }
+  .success-title { font-size: 22px; color: var(--green); font-weight: 700; margin-bottom: 8px; }
+  .success-id { font-size: 12px; color: var(--muted); font-family: monospace; margin-bottom: 28px; }
+  .success-btns { display: flex; gap: 12px; justify-content: center; }
+  .btn-sm { padding: 10px 22px; width: auto; }
+
+  /* ── Nav tabs (history) ── */
+  .nav-tabs { display: flex; gap: 6px; margin-bottom: 24px; }
+  .nav-tab {
+    padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; font-family: var(--font); background: transparent; transition: all .2s;
+  }
+  .nav-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  /* ── Spinner ── */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1d9bf044; border-radius: 4px; }
+
+  @media(max-width:600px) {
+    .steps { display: none; }
+    .trend-grid, .grid2, .tone-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">𝕏</div>
+    <div>
+      <div class="logo-text">Tweet Pilot</div>
+      <div class="logo-sub">أداة التغريد الذكي بالأفلييت</div>
+    </div>
+  </div>
+  <div class="steps" id="steps"></div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main" id="app"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const S = {
+  step: 0,
+  region: 'sa',
+  trends: [],
+  selectedTrends: [],
+  affiliateUrl: '',
+  productDesc: '',
+  tone: 'hype',
+  generatedTweet: '',
+  scheduleMode: 'now',
+  scheduleTime: '',
+  postResult: null,
+  view: 'wizard',   // wizard | history
+};
+
+const REGIONS = [
+  { key:'sa', label:'🇸🇦 السعودية' },
+  { key:'world', label:'🌍 العالم' },
+  { key:'ae', label:'🇦🇪 الإمارات' },
+  { key:'eg', label:'🇪🇬 مصر' },
+];
+
+const TONES = [
+  { id:'hype',        label:'🔥 إثارة وتشويق' },
+  { id:'informative', label:'📊 معلوماتي وموثوق' },
+  { id:'funny',       label:'😂 فكاهي وخفيف' },
+  { id:'urgency',     label:'⚡ عاجل وإلحاحي' },
+];
+
+const STEP_NAMES = ['الإعداد','الترندات','التغريدة','النشر'];
+
+// ═══════════════════════════════════════════
+//  API HELPERS
+// ═══════════════════════════════════════════
+const API = {
+  base: window.location.origin,
+  async get(path) {
+    const r = await fetch(this.base + path);
+    return r.json();
+  },
+  async post(path, body) {
+    const r = await fetch(this.base + path, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    return r.json();
+  },
+  async del(path) {
+    const r = await fetch(this.base + path, { method:'DELETE' });
+    return r.json();
+  },
+};
+
+// ═══════════════════════════════════════════
+//  RENDER ENGINE
+// ═══════════════════════════════════════════
+function render() {
+  renderSteps();
+  const app = document.getElementById('app');
+  if (S.view === 'history') { app.innerHTML = renderHistory(); bindHistory(); return; }
+  switch(S.step) {
+    case 0: app.innerHTML = renderStep0(); break;
+    case 1: app.innerHTML = renderStep1(); break;
+    case 2: app.innerHTML = renderStep2(); break;
+    case 3: app.innerHTML = renderStep3(); break;
+  }
+  bindStep();
+}
+
+function renderSteps() {
+  const el = document.getElementById('steps');
+  el.innerHTML = STEP_NAMES.map((name, i) => {
+    const cls = i === S.step ? 'active' : i < S.step ? 'done' : '';
+    const num = i < S.step ? '✓' : i+1;
+    return `<div class="step-pill ${cls}" onclick="if(${i}<${S.step})goStep(${i})">
+      <span class="step-num">${num}</span>${name}
+    </div>`;
+  }).join('');
+}
+
+// ── Step 0: Config ──
+function renderStep0() {
+  return `
+  <div class="page-title">إعداد الاتصال بـ X</div>
+  <p class="page-sub">أدخل مفاتيح X Developer API — تُحفظ في ملف .env على السيرفر</p>
+  <div class="info-box">
+    <span>ℹ️</span>
+    <div>
+      احصل على المفاتيح من <strong>developer.twitter.com</strong> → إنشاء App → Keys and Tokens<br>
+      تأكد من تفعيل صلاحية <strong>Read and Write</strong> في User Authentication Settings
+    </div>
+  </div>
+  <div class="card">
+    ${field('bearerToken','Bearer Token *','AAAA...','password',true)}
+    <div class="grid2">
+      ${field('apiKey','API Key (Consumer Key)','xxxx...','password')}
+      ${field('apiSecret','API Secret','xxxx...','password')}
+    </div>
+    <div class="grid2">
+      ${field('accessToken','Access Token','xxxx-xxxx...','password')}
+      ${field('accessSecret','Access Token Secret','xxxx...','password')}
+    </div>
+    ${field('anthropicKey','Anthropic API Key (لتوليد التغريدات)','sk-ant-...','password')}
+    <button class="btn btn-primary" id="btnSave" style="margin-top:8px">حفظ والمتابعة ←</button>
+  </div>
+  <div id="configStatus"></div>`;
+}
+
+function field(id, lbl, ph, type='text', required=false) {
+  return `<div class="field">
+    <label for="${id}">${lbl}</label>
+    <input id="${id}" type="${type}" placeholder="${ph}" ${required?'required':''}>
+  </div>`;
+}
+
+// ── Step 1: Trends ──
+function renderStep1() {
+  const trendCards = S.trends.map(t => {
+    const sel = S.selectedTrends.find(s => s.name===t.name);
+    return `<div class="trend-card ${sel?'selected':''}" onclick="toggleTrend('${t.name}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="trend-name">${t.name}</span>
+        ${sel ? '<span class="check-badge">✓</span>' : ''}
+      </div>
+      <div class="trend-vol">${t.tweet_volume ? t.tweet_volume.toLocaleString()+' تغريدة' : 'حجم غير متاح'}</div>
+    </div>`;
+  }).join('');
+
+  const selTags = S.selectedTrends.map(t => `<span class="tag">${t.name}</span>`).join('');
+
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+    <div>
+      <div class="page-title">الترندات الحالية</div>
+      <p style="color:var(--muted);font-size:13px">اختر حتى 3 ترندات لدمجها في تغريدتك</p>
+    </div>
+  </div>
+  <div class="region-tabs">
+    ${REGIONS.map(r=>`<button class="rtab ${S.region===r.key?'active':''}" onclick="setRegion('${r.key}')">${r.label}</button>`).join('')}
+  </div>
+  <button class="btn btn-ghost" id="btnFetch" style="margin-bottom:16px">
+    <span id="fetchLabel">🔄 جلب الترندات</span>
+  </button>
+  ${S.trends.length ? `<div class="trend-grid">${trendCards}</div>` : ''}
+  ${S.selectedTrends.length ? `<div style="margin-bottom:16px;padding:12px 16px;background:#0d3b5e22;border:1px solid #1d9bf033;border-radius:10px"><span style="font-size:13px;color:var(--blue);font-weight:600">المختارة: </span>${selTags}</div>` : ''}
+  <button class="btn btn-primary" id="btnNext1" ${S.selectedTrends.length===0?'disabled':''}>التالي: كتابة التغريدة ←</button>`;
+}
+
+// ── Step 2: Generate ──
+function renderStep2() {
+  const toneHtml = TONES.map(t =>
+    `<button class="tone-btn ${S.tone===t.id?'active':''}" onclick="setTone('${t.id}')">${t.label}</button>`
+  ).join('');
+
+  const charCount = S.generatedTweet.length;
+  const charColor = charCount > 280 ? 'var(--red)' : charCount > 240 ? 'var(--orange)' : 'var(--green)';
+
+  return `
+  <div class="page-title">إنشاء التغريدة</div>
+  <p class="page-sub" style="margin-bottom:20px">أدخل رابط الأفلييت ثم دع الذكاء الاصطناعي يكتب</p>
+  <div class="card">
+    <div class="grid2">
+      <div class="field">
+        <label>رابط الأفلييت *</label>
+        <input id="afUrl" type="url" placeholder="https://..." value="${S.affiliateUrl}">
+      </div>
+      <div class="field">
+        <label>وصف المنتج (اختياري)</label>
+        <input id="prodDesc" type="text" placeholder="مثال: سماعات بلوتوث احترافية" value="${S.productDesc}">
+      </div>
+    </div>
+    <div class="field">
+      <label>أسلوب التغريدة</label>
+      <div class="tone-grid">${toneHtml}</div>
+    </div>
+    <button class="btn btn-purple" id="btnGenerate" style="margin-top:6px">✨ توليد التغريدة بالذكاء الاصطناعي</button>
+    <div id="genLoading" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:#9d6fff">
+      🤖 يحلل الترندات ويصيغ تغريدة احترافية...
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+  </div>
+
+  ${S.generatedTweet ? `
+  <div class="tweet-editor ${charCount>280?'error':''}">
+    <div class="tweet-bar">
+      <span class="tweet-label">📝 التغريدة المولّدة</span>
+      <span class="char-count" style="color:${charColor}">${charCount}/280</span>
+    </div>
+    <textarea id="tweetText" rows="6">${S.generatedTweet}</textarea>
+    ${charCount>280 ? '<p style="color:var(--red);font-size:12px;margin-top:6px">⚠️ تجاوز الحد — يرجى تقليص التغريدة</p>' : ''}
+  </div>
+  ` : ''}
+
+  <button class="btn btn-primary" id="btnNext2" ${!S.generatedTweet||charCount>280?'disabled':''}>التالي: نشر أو جدولة ←</button>`;
+}
+
+// ── Step 3: Post ──
+function renderStep3() {
+  if (S.postResult) return renderSuccess();
+  return `
+  <div class="page-title">نشر التغريدة</div>
+  <div class="tweet-preview">
+    <div class="tweet-preview-text">${S.generatedTweet}</div>
+    <div class="tweet-preview-meta">
+      <span>💬 0</span><span>🔁 0</span><span>❤️ 0</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">⏱️ وقت النشر</div>
+    <div class="mode-toggle">
+      <button class="mode-btn ${S.scheduleMode==='now'?'active':''}" onclick="setMode('now')">⚡ نشر الآن</button>
+      <button class="mode-btn ${S.scheduleMode==='schedule'?'active':''}" onclick="setMode('schedule')">🕐 جدولة</button>
+    </div>
+    ${S.scheduleMode==='schedule' ? `<div class="field"><label>موعد النشر</label><input id="schedTime" type="datetime-local" value="${S.scheduleTime}"></div>` : ''}
+  </div>
+  <button class="btn btn-primary" id="btnPost" ${S.scheduleMode==='schedule'&&!S.scheduleTime?'disabled':''} style="font-size:16px;padding:15px">
+    ${S.scheduleMode==='now' ? '🚀 نشر الآن' : '📅 تأكيد الجدولة'}
+  </button>
+  <div id="postLoading" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:var(--blue)">
+    <span class="spinner"></span> جاري ${S.scheduleMode==='now'?'النشر':'الجدولة'}...
+  </div>`;
+}
+
+function renderSuccess() {
+  const r = S.postResult;
+  return `
+  <div class="success-screen">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">${r.message}</div>
+    <div class="success-id">${r.tweetId ? 'Tweet ID: '+r.tweetId : ''}</div>
+    <div class="success-btns">
+      <button class="btn btn-primary btn-sm" onclick="resetWizard()">+ تغريدة جديدة</button>
+      ${r.tweetId ? `<a href="https://x.com/i/web/status/${r.tweetId}" target="_blank" style="padding:10px 22px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--blue);font-size:14px;font-weight:600;text-decoration:none">عرض في X ↗</a>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="S.view='history';render()">السجل</button>
+    </div>
+  </div>`;
+}
+
+// ── History view ──
+async function renderHistory() {
+  return `<div class="page-title">سجل التغريدات</div>
+  <div class="nav-tabs">
+    <button class="nav-tab" onclick="S.view='wizard';render()">← العودة</button>
+    <button class="nav-tab active">الكل</button>
+  </div>
+  <div class="card" id="historyContent">
+    <div style="text-align:center;color:var(--muted);padding:24px"><span class="spinner"></span> جاري التحميل...</div>
+  </div>`;
+}
+
+async function bindHistory() {
+  try {
+    const [histRes, schRes] = await Promise.all([API.get('/api/tweet/history'), API.get('/api/schedule')]);
+    const rows = [...(histRes.history||[]), ...(schRes.scheduled||[]).map(s=>({...s, posted_at:s.scheduled_at, is_scheduled:true}))];
+    rows.sort((a,b) => new Date(b.posted_at) - new Date(a.posted_at));
+
+    if (!rows.length) {
+      document.getElementById('historyContent').innerHTML = '<p style="text-align:center;color:var(--muted);padding:24px">لا يوجد سجل بعد</p>';
+      return;
+    }
+
+    document.getElementById('historyContent').innerHTML = `
+      <table class="history-table">
+        <thead><tr>
+          <th>التغريدة</th><th>الرابط</th><th>الوقت</th><th>الحالة</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r => `
+          <tr>
+            <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.content}</td>
+            <td><a href="${r.affiliate_url||'#'}" target="_blank" style="color:var(--blue);font-size:11px">رابط ↗</a></td>
+            <td style="font-size:11px;color:var(--muted)">${new Date(r.posted_at).toLocaleString('ar-SA')}</td>
+            <td>${statusBadge(r)}</td>
+            <td>${r.is_scheduled && r.status==='pending' ? `<button onclick="cancelScheduled(${r.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px">حذف</button>` : ''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('historyContent').innerHTML = '<p style="color:var(--red);padding:16px">تعذر تحميل البيانات</p>';
+  }
+}
+
+function statusBadge(r) {
+  if (r.is_scheduled && r.status==='pending') return '<span class="badge badge-blue">⏰ مجدولة</span>';
+  if (r.status==='posted') return '<span class="badge badge-green">✓ منشورة</span>';
+  if (r.status==='failed') return '<span class="badge badge-red">✗ فشلت</span>';
+  return '<span class="badge badge-blue">'+r.status+'</span>';
+}
+
+// ═══════════════════════════════════════════
+//  BIND EVENTS
+// ═══════════════════════════════════════════
+function bindStep() {
+  const $ = id => document.getElementById(id);
+  if (S.step === 0) {
+    $('btnSave')?.addEventListener('click', saveConfig);
+  }
+  if (S.step === 1) {
+    $('btnFetch')?.addEventListener('click', fetchTrends);
+    $('btnNext1')?.addEventListener('click', () => goStep(2));
+  }
+  if (S.step === 2) {
+    $('afUrl')?.addEventListener('input', e => S.affiliateUrl = e.target.value);
+    $('prodDesc')?.addEventListener('input', e => S.productDesc = e.target.value);
+    $('tweetText')?.addEventListener('input', e => {
+      S.generatedTweet = e.target.value;
+      updateCharCount(e.target.value.length);
+    });
+    $('btnGenerate')?.addEventListener('click', generateTweet);
+    $('btnNext2')?.addEventListener('click', () => goStep(3));
+  }
+  if (S.step === 3) {
+    $('schedTime')?.addEventListener('input', e => S.scheduleTime = e.target.value);
+    $('btnPost')?.addEventListener('click', postTweet);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════
+async function saveConfig() {
+  const get = id => document.getElementById(id)?.value?.trim();
+  if (!get('bearerToken')) { showStatus('Bearer Token مطلوب!', 'error'); return; }
+  showStatus('✅ تم الحفظ — يرجى تحديث ملف .env بهذه القيم وإعادة تشغيل السيرفر', 'ok');
+  setTimeout(() => goStep(1), 1500);
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('configStatus');
+  if (!el) return;
+  el.innerHTML = `<div style="padding:12px 16px;border-radius:10px;font-size:13px;margin-top:12px;background:${type==='ok'?'#00c89622':'#ff444422'};color:${type==='ok'?'var(--green)':'var(--red)'};">${msg}</div>`;
+}
+
+async function fetchTrends() {
+  const btn = document.getElementById('btnFetch');
+  const lbl = document.getElementById('fetchLabel');
+  if (!btn) return;
+  btn.disabled = true;
+  lbl.innerHTML = '<span class="spinner"></span> جاري الجلب...';
+  try {
+    const data = await API.get(`/api/trends?region=${S.region}`);
+    if (data.success) {
+      S.trends = data.trends;
+    } else {
+      // Fallback mock if API not ready
+      S.trends = mockTrends();
+    }
+  } catch(e) {
+    S.trends = mockTrends();
+  }
+  btn.disabled = false;
+  render();
+}
+
+function mockTrends() {
+  return [
+    { name:'#الذكاء_الاصطناعي', tweet_volume:48200 },
+    { name:'#تخفيضات_الصيف', tweet_volume:31500 },
+    { name:'#العروض_اليوم', tweet_volume:22100 },
+    { name:'#ريادة_الاعمال', tweet_volume:18700 },
+    { name:'#التسوق_اونلاين', tweet_volume:15400 },
+    { name:'#تطوير_الذات', tweet_volume:12900 },
+  ];
+}
+
+function toggleTrend(name) {
+  const t = S.trends.find(x => x.name===name);
+  if (!t) return;
+  const idx = S.selectedTrends.findIndex(x => x.name===name);
+  if (idx >= 0) { S.selectedTrends.splice(idx, 1); }
+  else if (S.selectedTrends.length < 3) { S.selectedTrends.push(t); }
+  render();
+}
+
+function setRegion(key) { S.region = key; render(); }
+function setTone(id) { S.tone = id; render(); }
+function setMode(m) { S.scheduleMode = m; render(); }
+
+function updateCharCount(n) {
+  const el = document.querySelector('.char-count');
+  const btn = document.getElementById('btnNext2');
+  if (el) {
+    el.textContent = n+'/280';
+    el.style.color = n>280 ? 'var(--red)' : n>240 ? 'var(--orange)' : 'var(--green)';
+  }
+  if (btn) btn.disabled = n===0 || n>280;
+}
+
+const TONE_MAP = {
+  hype:        'مثير ومشوق يجعل القارئ يشعر بالإثارة',
+  informative: 'معلوماتي وموثوق يبني الثقة',
+  funny:       'فكاهي وخفيف الظل مع لمسة ذكاء',
+  urgency:     'عاجل وإلحاحي يحث على اتخاذ قرار سريع',
+};
+
+async function generateTweet() {
+  const afUrl = document.getElementById('afUrl')?.value?.trim();
+  const desc  = document.getElementById('prodDesc')?.value?.trim();
+  if (!afUrl) { alert('أدخل رابط الأفلييت أولاً'); return; }
+
+  S.affiliateUrl = afUrl;
+  S.productDesc = desc || '';
+
+  const btn = document.getElementById('btnGenerate');
+  const loading = document.getElementById('genLoading');
+  btn.disabled = true;
+  if (loading) loading.style.display = 'block';
+
+  const trendNames = S.selectedTrends.map(t => t.name).join('، ');
+  const toneDesc   = TONE_MAP[S.tone] || TONE_MAP.hype;
+
+  const prompt = `أنت خبير تسويق رقمي عربي محترف متخصص في تويتر/X.
+اكتب تغريدة واحدة فقط باللغة العربية.
+الشروط الصارمة:
+- الطول: بين 200-270 حرف بالضبط
+- الأسلوب: ${toneDesc}
+- استخدم هذه الترندات بشكل طبيعي: ${trendNames}
+- أدرج هذا الرابط: ${S.affiliateUrl}
+- المنتج/الخدمة: ${S.productDesc || 'منتج مميز'}
+- ضع الهاشتاقات في النهاية فقط (2-3 هاشتاق)
+- اجعل التغريدة تبدو طبيعية وإنسانية وليست إعلاناً مكشوفاً
+- استخدم 2-3 إيموجي مناسبة فقط
+- لا تكتب أي شرح أو مقدمة، فقط نص التغريدة مباشرة`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await response.json();
+    const text = data.content?.map(i => i.text || '').join('').trim();
+    if (text) {
+      S.generatedTweet = text;
+    } else {
+      alert('فشل التوليد، حاول مجدداً');
+    }
+  } catch(e) {
+    alert('خطأ في الاتصال بالسيرفر');
+  }
+
+  btn.disabled = false;
+  render();
+}
+
+async function postTweet() {
+  const btn = document.getElementById('btnPost');
+  const loading = document.getElementById('postLoading');
+  btn.disabled = true;
+  if (loading) loading.style.display = 'block';
+
+  try {
+    let data;
+    if (S.scheduleMode === 'now') {
+      data = await API.post('/api/tweet/post', {
+        content: S.generatedTweet,
+        affiliateUrl: S.affiliateUrl,
+        trends: S.selectedTrends,
+      });
+      if (data.success) {
+        S.postResult = { message:'✅ تم نشر التغريدة بنجاح!', tweetId: data.tweetId };
+      } else throw new Error(data.error);
+    } else {
+      data = await API.post('/api/schedule', {
+        content: S.generatedTweet,
+        affiliateUrl: S.affiliateUrl,
+        trends: S.selectedTrends,
+        scheduledAt: new Date(S.scheduleTime).toISOString(),
+      });
+      if (data.success) {
+        S.postResult = { message:`✅ تم جدولة التغريدة ليوم ${new Date(S.scheduleTime).toLocaleString('ar-SA')}`, tweetId: null };
+      } else throw new Error(data.error);
+    }
+    render();
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    btn.disabled = false;
+    alert('فشل النشر: ' + e.message);
+  }
+}
+
+async function cancelScheduled(id) {
+  if (!confirm('هل تريد حذف هذه الجدولة؟')) return;
+  await API.del('/api/schedule/' + id);
+  bindHistory();
+}
+
+function goStep(n) { S.step = n; render(); }
+function resetWizard() {
+  S.step = 1; S.selectedTrends = []; S.generatedTweet = '';
+  S.affiliateUrl = ''; S.productDesc = ''; S.postResult = null;
+  render();
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+render();
+</script>
+</body>
+</html>
