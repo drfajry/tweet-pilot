@@ -19,7 +19,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/trends',   require('./routes/trends'));
 app.use('/api/tweet',    require('./routes/tweet'));
 app.use('/api/schedule', require('./routes/schedule'));
-app.use('/api/generate', require('./routes/generate'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
